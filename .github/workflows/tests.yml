@@ -1,0 +1,71 @@
+name: autotests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      marker:
+        description: "pytest -m expression (empty = default suite, 'demo_failures' = red demo tests)"
+        required: false
+        default: ""
+
+concurrency:
+  group: autotests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          uv sync --frozen
+          uv run playwright install --with-deps chromium
+          npm ci
+
+      # Allure 3 history is one JSONL file; carry it between runs to get trends and flaky detection.
+      - name: Restore Allure history
+        uses: actions/cache/restore@v4
+        with:
+          path: .allure
+          key: allure-history-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: allure-history-${{ github.ref_name }}-
+
+      - name: Run tests and build Allure report
+        env:
+          MARKER: ${{ github.event.inputs.marker }}
+        run: |
+          if [ -n "$MARKER" ]; then
+            npx allure run -- uv run pytest -n 4 -m "$MARKER"
+          else
+            npx allure run -- uv run pytest -n 4
+          fi
+
+      - name: Save Allure history
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .allure
+          key: allure-history-${{ github.ref_name }}-${{ github.run_id }}
+
+      - name: Upload Allure report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: allure-report
+          retention-days: 14
