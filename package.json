@@ -1,0 +1,11 @@
+{
+  "name": "intershop-allure3-demo",
+  "private": true,
+  "description": "Allure Report 3 CLI for the Python test project",
+  "scripts": {
+    "allure": "allure"
+  },
+  "devDependencies": {
+    "allure": "3.21.0"
+  }
+}
