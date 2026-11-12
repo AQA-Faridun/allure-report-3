@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Node
+node_modules/
+
+# Secrets
+.env
+
+# Test artifacts
+allure-results/
+allure-report/
+.allure/
+test-results/
+docs/run-summary.md
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
